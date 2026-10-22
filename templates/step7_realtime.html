@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>실시간 YOLO 탐지</title>
+  <style>
+    /* STEP 2·3과 같은 무채색 팔레트. 영상과 숫자가 주인공이 되도록 주변은 조용하게 둔다. */
+    :root {
+      --bg: #eceae6;
+      --surface: #f6f5f2;
+      --text: #2e2d2a;
+      --muted: #77746e;
+      --line: #d5d2cc;
+      --placeholder: #dfdcd6;
+      --button: #3a3935;
+      --button-hover: #4a4844;
+      --button-text: #f6f5f2;
+      --focus: #8a8780;
+      --bar: #b9b5ad;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+      line-height: 1.6;
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 16px;
+    }
+
+    header {
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: 0.04em;
+    }
+
+    h1 {
+      margin: 4px 0 0;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .views,
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    figure,
+    .panel {
+      margin: 0;
+      padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    .panel {
+      padding: 16px;
+    }
+
+    .frame {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      background: var(--placeholder);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .frame img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .empty {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      color: var(--muted);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    figcaption {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    code {
+      font-family: "Consolas", ui-monospace, monospace;
+      font-size: 12px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 20px 0 24px;
+    }
+
+    .toolbar button {
+      padding: 10px 28px;
+      border: 0;
+      border-radius: 4px;
+      background: var(--button);
+      color: var(--button-text);
+      font: inherit;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .toolbar button:hover {
+      background: var(--button-hover);
+    }
+
+    button:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .toolbar button:disabled {
+      opacity: 0.55;
+      cursor: wait;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .metric {
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+    }
+
+    .metric .label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metric .value {
+      display: block;
+      font-size: 20px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    td {
+      padding: 5px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    td.num {
+      width: 48px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    td.bar-cell {
+      width: 45%;
+      padding-left: 12px;
+    }
+
+    .bar {
+      height: 6px;
+      background: var(--bar);
+      border-radius: 3px;
+    }
+
+    .settings {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .error {
+      margin: 12px 0 0;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .head span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .thumbs {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .thumbs button {
+      display: block;
+      width: 100%;
+      padding: 0;
+      background: var(--placeholder);
+      border: 2px solid transparent;
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .thumbs button:hover {
+      border-color: var(--line);
+    }
+
+    .thumbs button.active {
+      border-color: var(--button);
+    }
+
+    .thumbs img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+    }
+
+    .muted {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 720px) {
+      .views,
+      .panels {
+        grid-template-columns: 1fr;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .thumbs {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">STEP 7 · Realtime YOLO</p>
+      <h1>실시간 객체 탐지</h1>
+    </header>
+
+    <section class="views">
+      <figure>
+        <div class="frame">
+          <img id="stream" src="/detect_feed" alt="YOLO 탐지 결과 실시간 영상">
+          <div class="empty" id="stream-error" hidden>영상을 받지 못했습니다. 서버 콘솔을 확인한 뒤 새로 고치세요.</div>
+        </div>
+        <figcaption>
+          <span>탐지 결과 스트림</span>
+          <code>/detect_feed</code>
+        </figcaption>
+      </figure>
+
+      <figure>
+        <div class="frame">
+          <img id="preview" alt="저장한 탐지 결과" hidden>
+          <div class="empty" id="preview-empty">아직 저장한 탐지 결과가 없습니다.</div>
+        </div>
+        <figcaption>
+          <span id="preview-counts">저장한 프레임</span>
+          <code id="preview-name">-</code>
+        </figcaption>
+      </figure>
+    </section>
+
+    <div class="toolbar">
+      <button type="button" id="capture-button">촬영</button>
+      <span class="status" id="status" role="status">버튼을 누르거나 스페이스 키로 탐지 결과 프레임을 저장합니다.</span>
+    </div>
+
+    <section class="panels">
+      <div class="panel">
+        <h2>실시간 통계</h2>
+        <div class="metrics">
+          <div class="metric"><span class="label">FPS</span><span class="value" id="fps">-</span></div>
+          <div class="metric"><span class="label">추론 ms</span><span class="value" id="inference">-</span></div>
+          <div class="metric"><span class="label">탐지 수</span><span class="value" id="total">-</span></div>
+          <div class="metric"><span class="label">장치</span><span class="value" id="device" style="font-size:14px">-</span></div>
+        </div>
+        <h2>클래스별 탐지 개수</h2>
+        <table id="counts"></table>
+        <p class="settings" id="settings">-</p>
+        <p class="error" id="error" hidden></p>
+      </div>
+
+      <div class="panel">
+        <div class="head">
+          <h2>저장 이력</h2>
+          <span>최근 {{ history_limit }}장 · captures/detected</span>
+        </div>
+        <p class="muted" id="history-empty">저장된 탐지 결과가 없습니다.</p>
+        <ul class="thumbs" id="thumbs"></ul>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const HISTORY_LIMIT = {{ history_limit }};
+
+    const $ = (id) => document.getElementById(id);
+    const button = $("capture-button");
+    const thumbs = $("thumbs");
+
+    $("stream").addEventListener("error", function () {
+      $("stream-error").hidden = false;
+    });
+
+    // 클래스별 개수 표를 다시 그린다. 이름은 textContent로 넣어 HTML로 해석되지 않게 한다.
+    function renderCounts(counts) {
+      const table = $("counts");
+      const entries = Object.entries(counts || {});
+      const max = Math.max(1, ...entries.map(([, n]) => n));
+
+      table.replaceChildren();
+
+      if (entries.length === 0) {
+        const row = table.insertRow();
+        const cell = row.insertCell();
+        cell.textContent = "탐지된 물체 없음";
+        cell.className = "muted";
+        return;
+      }
+
+      for (const [name, n] of entries) {
+        const row = table.insertRow();
+        const nameCell = row.insertCell();
+        const barCell = row.insertCell();
+        const numCell = row.insertCell();
+        const bar = document.createElement("div");
+
+        nameCell.textContent = name;
+        bar.className = "bar";
+        bar.style.width = (n / max * 100) + "%";
+        barCell.className = "bar-cell";
+        barCell.appendChild(bar);
+        numCell.className = "num";
+        numCell.textContent = n;
+      }
+    }
+
+    // 0.5초마다 /stats를 불러 숫자를 새로 고친다.
+    async function refreshStats() {
+      try {
+        const res = await fetch("/stats");
+        const s = await res.json();
+
+        if (s.fps !== undefined) {
+          $("fps").textContent = s.fps.toFixed(1);
+          $("inference").textContent = s.inference_ms.toFixed(0);
+          $("total").textContent = s.total;
+          $("device").textContent = s.device;
+          $("settings").textContent = "imgsz " + s.imgsz + " · skip " + s.skip + " · conf " + s.conf;
+          renderCounts(s.counts);
+        }
+
+        $("error").hidden = !s.error;
+        $("error").textContent = s.error || "";
+      } catch (e) {
+        $("error").hidden = false;
+        $("error").textContent = "서버에 연결할 수 없습니다.";
+      }
+    }
+
+    function showPreview(item) {
+      $("preview").src = item.url;
+      $("preview").hidden = false;
+      $("preview-empty").hidden = true;
+      $("preview-name").textContent = item.filename;
+
+      if (item.counts) {
+        const text = Object.entries(item.counts).map(([name, n]) => name + " " + n).join(", ");
+        $("preview-counts").textContent = text || "탐지된 물체 없음";
+      } else {
+        $("preview-counts").textContent = "저장한 프레임";
+      }
+
+      for (const b of thumbs.querySelectorAll("button")) {
+        b.classList.toggle("active", b.dataset.filename === item.filename);
+      }
+    }
+
+    function createThumb(item) {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      const img = document.createElement("img");
+
+      b.type = "button";
+      b.dataset.filename = item.filename;
+      b.title = item.filename;
+      img.src = item.url;
+      img.alt = item.filename;
+      img.loading = "lazy";
+
+      b.appendChild(img);
+      b.addEventListener("click", function () {
+        showPreview(item);
+      });
+      li.appendChild(b);
+
+      return li;
+    }
+
+    function addToHistory(item) {
+      thumbs.prepend(createThumb(item));
+
+      while (thumbs.children.length > HISTORY_LIMIT) {
+        thumbs.lastElementChild.remove();
+      }
+
+      $("history-empty").hidden = thumbs.children.length > 0;
+    }
+
+    async function loadHistory() {
+      try {
+        const res = await fetch("/captures");
+        const data = await res.json();
+
+        for (const item of data.captures.slice().reverse()) {
+          addToHistory(item);
+        }
+
+        if (data.captures.length > 0) {
+          showPreview(data.captures[0]);
+        }
+      } catch (e) {
+        $("status").textContent = "저장 이력을 불러오지 못했습니다.";
+      }
+    }
+
+    async function capture() {
+      button.disabled = true;
+      $("status").textContent = "저장 중...";
+
+      try {
+        const res = await fetch("/capture", { method: "POST" });
+        const data = await res.json();
+
+        if (!res.ok) {
+          $("status").textContent = data.error || "저장에 실패했습니다.";
+          return;
+        }
+
+        addToHistory(data);
+        showPreview(data);
+        $("status").textContent = "저장했습니다: captures/detected/" + data.filename;
+      } catch (e) {
+        $("status").textContent = "서버에 연결할 수 없습니다. 서버가 켜져 있는지 확인하세요.";
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    button.addEventListener("click", capture);
+
+    document.addEventListener("keydown", function (event) {
+      if (event.code !== "Space" || event.repeat || button.disabled) {
+        return;
+      }
+
+      if (document.activeElement && document.activeElement.tagName === "BUTTON") {
+        return;
+      }
+
+      event.preventDefault();
+      capture();
+    });
+
+    loadHistory();
+    refreshStats();
+    setInterval(refreshStats, 500);
+  </script>
+</body>
+</html>

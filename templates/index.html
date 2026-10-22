@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>웹캠 스트리밍</title>
+  <style>
+    /* 색은 무채색 계열만 쓴다. 영상이 화면의 주인공이 되도록 주변은 조용하게 둔다. */
+    :root {
+      --bg: #eceae6;
+      --surface: #f6f5f2;
+      --text: #2e2d2a;
+      --muted: #77746e;
+      --line: #d5d2cc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+      line-height: 1.6;
+    }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 16px;
+    }
+
+    header {
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: 0.04em;
+    }
+
+    h1 {
+      margin: 4px 0 0;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    figure {
+      margin: 0;
+      padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    .stream {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 4 / 3;
+      object-fit: contain;
+      background: var(--line);
+      border-radius: 3px;
+    }
+
+    figcaption {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    code {
+      font-family: "Consolas", ui-monospace, monospace;
+      font-size: 12px;
+    }
+
+    .notice {
+      display: none;
+      margin: 16px 0 0;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .notice.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">STEP 2 · Flask MJPEG</p>
+      <h1>웹캠 스트리밍</h1>
+    </header>
+
+    <figure>
+      <img class="stream" id="stream" src="/video_feed" alt="웹캠 실시간 영상">
+      <figcaption>
+        <span>127.0.0.1:5000</span>
+        <code>multipart/x-mixed-replace</code>
+      </figcaption>
+    </figure>
+
+    <p class="notice" id="notice">
+      영상을 받지 못했습니다. 서버 콘솔의 오류 메시지를 확인한 뒤 서버를 다시 실행하고 이 페이지를 새로 고치세요.
+    </p>
+  </main>
+
+  <script>
+    // 서버가 꺼지거나 카메라가 끊기면 img가 error 이벤트를 낸다. 그때 안내 문구를 보여 준다.
+    document.getElementById("stream").addEventListener("error", function () {
+      document.getElementById("notice").classList.add("show");
+    });
+  </script>
+</body>
+</html>

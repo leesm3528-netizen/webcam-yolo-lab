@@ -1,0 +1,6 @@
+# GPU(NVIDIA)를 쓰려면 torch/torchvision은 pytorch.org 설치 선택기의 명령으로 먼저 설치하세요.
+# 예: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu132
+ultralytics>=8.4
+opencv-python
+flask
+numpy

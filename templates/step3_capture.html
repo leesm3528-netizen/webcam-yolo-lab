@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>웹캠 촬영</title>
+  <style>
+    /* 2단계와 같은 무채색 팔레트. 영상과 사진이 주인공이 되도록 주변은 조용하게 둔다. */
+    :root {
+      --bg: #eceae6;
+      --surface: #f6f5f2;
+      --text: #2e2d2a;
+      --muted: #77746e;
+      --line: #d5d2cc;
+      --placeholder: #dfdcd6;
+      --button: #3a3935;
+      --button-hover: #4a4844;
+      --button-text: #f6f5f2;
+      --focus: #8a8780;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+      line-height: 1.6;
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 16px;
+    }
+
+    header {
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: 0.04em;
+    }
+
+    h1 {
+      margin: 4px 0 0;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .views {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    figure {
+      margin: 0;
+      padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    .frame {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      background: var(--placeholder);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .frame img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .empty {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      color: var(--muted);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    figcaption {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    code {
+      font-family: "Consolas", ui-monospace, monospace;
+      font-size: 12px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 20px 0 32px;
+    }
+
+    button {
+      padding: 10px 28px;
+      border: 0;
+      border-radius: 4px;
+      background: var(--button);
+      color: var(--button-text);
+      font: inherit;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: var(--button-hover);
+    }
+
+    button:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: wait;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .history {
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    .history-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .history-head span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .thumbs {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .thumbs button {
+      display: block;
+      width: 100%;
+      padding: 0;
+      background: var(--placeholder);
+      border: 2px solid transparent;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .thumbs button:hover {
+      background: var(--placeholder);
+      border-color: var(--line);
+    }
+
+    .thumbs button.active {
+      border-color: var(--button);
+    }
+
+    .thumbs img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+    }
+
+    .thumbs .name {
+      display: block;
+      padding: 4px 6px;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 11px;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-empty {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 720px) {
+      .views {
+        grid-template-columns: 1fr;
+      }
+
+      .thumbs {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">STEP 3 · Capture</p>
+      <h1>웹캠 촬영</h1>
+    </header>
+
+    <section class="views">
+      <figure>
+        <div class="frame">
+          <img id="stream" src="/video_feed" alt="웹캠 실시간 영상">
+          <div class="empty" id="stream-error" hidden>영상을 받지 못했습니다. 서버 콘솔을 확인한 뒤 새로 고치세요.</div>
+        </div>
+        <figcaption>
+          <span>실시간 스트림</span>
+          <code>/video_feed</code>
+        </figcaption>
+      </figure>
+
+      <figure>
+        <div class="frame">
+          <img id="preview" alt="최근 촬영한 사진" hidden>
+          <div class="empty" id="preview-empty">아직 촬영한 사진이 없습니다.</div>
+        </div>
+        <figcaption>
+          <span>촬영한 사진</span>
+          <code id="preview-name">-</code>
+        </figcaption>
+      </figure>
+    </section>
+
+    <div class="toolbar">
+      <button type="button" id="capture-button">촬영</button>
+      <span class="status" id="status" role="status">버튼을 누르거나 스페이스 키로 촬영합니다.</span>
+    </div>
+
+    <section class="history">
+      <div class="history-head">
+        <h2>촬영 이력</h2>
+        <span>최근 {{ history_limit }}장</span>
+      </div>
+      <p class="history-empty" id="history-empty">저장된 사진이 없습니다.</p>
+      <ul class="thumbs" id="thumbs"></ul>
+    </section>
+  </main>
+
+  <script>
+    const HISTORY_LIMIT = {{ history_limit }};
+
+    const streamImg = document.getElementById("stream");
+    const streamError = document.getElementById("stream-error");
+    const preview = document.getElementById("preview");
+    const previewEmpty = document.getElementById("preview-empty");
+    const previewName = document.getElementById("preview-name");
+    const button = document.getElementById("capture-button");
+    const statusText = document.getElementById("status");
+    const thumbs = document.getElementById("thumbs");
+    const historyEmpty = document.getElementById("history-empty");
+
+    // 스트림이 끊기면 안내 문구를 보여 준다.
+    streamImg.addEventListener("error", function () {
+      streamError.hidden = false;
+    });
+
+    // 오른쪽 미리보기 칸에 사진 한 장을 보여 주고, 이력에서 해당 썸네일을 강조한다.
+    function showPreview(item) {
+      preview.src = item.url;
+      preview.hidden = false;
+      previewEmpty.hidden = true;
+      previewName.textContent = item.filename;
+
+      for (const b of thumbs.querySelectorAll("button")) {
+        b.classList.toggle("active", b.dataset.filename === item.filename);
+      }
+    }
+
+    // 썸네일 하나를 만든다. 파일 이름은 textContent로 넣어 HTML로 해석되지 않게 한다.
+    function createThumb(item) {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      const img = document.createElement("img");
+      const name = document.createElement("span");
+
+      b.type = "button";
+      b.dataset.filename = item.filename;
+      b.title = item.filename;
+
+      img.src = item.url;
+      img.alt = item.filename;
+      img.loading = "lazy";
+
+      name.className = "name";
+      name.textContent = item.filename;
+
+      b.appendChild(img);
+      b.appendChild(name);
+      b.addEventListener("click", function () {
+        showPreview(item);
+      });
+
+      li.appendChild(b);
+      return li;
+    }
+
+    // 새 사진을 이력 맨 앞에 넣고, 최근 HISTORY_LIMIT장만 남긴다.
+    function addToHistory(item) {
+      thumbs.prepend(createThumb(item));
+
+      while (thumbs.children.length > HISTORY_LIMIT) {
+        thumbs.lastElementChild.remove();
+      }
+
+      historyEmpty.hidden = thumbs.children.length > 0;
+    }
+
+    // 페이지를 열 때 서버에 저장된 이력을 불러온다.
+    async function loadHistory() {
+      try {
+        const res = await fetch("/captures");
+        const data = await res.json();
+
+        // 서버는 최신순으로 주므로, 오래된 것부터 넣어야 최신이 맨 앞에 온다.
+        for (const item of data.captures.slice().reverse()) {
+          addToHistory(item);
+        }
+
+        if (data.captures.length > 0) {
+          showPreview(data.captures[0]);
+        }
+      } catch (e) {
+        statusText.textContent = "촬영 이력을 불러오지 못했습니다.";
+      }
+    }
+
+    // POST /capture를 보내고, 응답으로 받은 파일을 바로 보여 준다. 페이지는 새로 고치지 않는다.
+    async function capture() {
+      button.disabled = true;
+      statusText.textContent = "저장 중...";
+
+      try {
+        const res = await fetch("/capture", { method: "POST" });
+        const data = await res.json();
+
+        if (!res.ok) {
+          statusText.textContent = data.error || "촬영에 실패했습니다.";
+          return;
+        }
+
+        addToHistory(data);
+        showPreview(data);
+        statusText.textContent = "저장했습니다: captures/" + data.filename + " (frame " + data.frame_id + ")";
+      } catch (e) {
+        statusText.textContent = "서버에 연결할 수 없습니다. 서버가 켜져 있는지 확인하세요.";
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    button.addEventListener("click", capture);
+
+    // 스페이스 키로도 촬영한다. 버튼에 포커스가 있을 때는 브라우저가 이미 클릭으로 처리하므로 건너뛴다.
+    document.addEventListener("keydown", function (event) {
+      if (event.code !== "Space" || event.repeat || button.disabled) {
+        return;
+      }
+
+      if (document.activeElement && document.activeElement.tagName === "BUTTON") {
+        return;
+      }
+
+      event.preventDefault();
+      capture();
+    });
+
+    loadHistory();
+  </script>
+</body>
+</html>

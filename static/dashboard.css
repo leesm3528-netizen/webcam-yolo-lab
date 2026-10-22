@@ -1,0 +1,660 @@
+/*
+  STEP 8 파이프라인 대시보드 스타일
+
+  디자인 규칙
+  - 무채색 바탕에 강조색은 하나(황토색)만 쓴다. 강조색은 "지금 활성 단계"와 "병목"과 WARN에만 쓴다.
+  - 카드 상자를 겹겹이 쌓지 않고, 얇은 선(1px)과 여백으로 영역을 나눈다. 모서리는 거의 둥글리지 않는다.
+  - 색은 모두 CSS 변수로 정의하고, 다크 모드는 변수 값만 바꾼다.
+*/
+
+:root {
+  --bg: #f4f3f0;
+  --fg: #23221f;
+  --muted: #74716a;
+  --faint: #a8a49c;
+  --line: #dcd9d2;
+  --line-strong: #b9b5ad;
+  --node-bg: #faf9f7;
+  --console-bg: #eeede9;
+  --stack-1: #8e8a83;
+  --stack-2: #b3afa7;
+  --accent: #9c6b22;
+  --accent-weak: rgba(156, 107, 34, 0.12);
+  --mono: "Cascadia Mono", "Consolas", ui-monospace, monospace;
+  --sans: "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181a;
+    --fg: #e6e4df;
+    --muted: #9a978f;
+    --faint: #6c6962;
+    --line: #2f2e2c;
+    --line-strong: #4a4844;
+    --node-bg: #1f1f21;
+    --console-bg: #131315;
+    --stack-1: #77746e;
+    --stack-2: #55534f;
+    --accent: #d3a35a;
+    --accent-weak: rgba(211, 163, 90, 0.14);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #18181a;
+  --fg: #e6e4df;
+  --muted: #9a978f;
+  --faint: #6c6962;
+  --line: #2f2e2c;
+  --line-strong: #4a4844;
+  --node-bg: #1f1f21;
+  --console-bg: #131315;
+  --stack-1: #77746e;
+  --stack-2: #55534f;
+  --accent: #d3a35a;
+  --accent-weak: rgba(211, 163, 90, 0.14);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 17px;
+}
+
+h2 {
+  font-size: 14px;
+}
+
+h3 {
+  font-size: 13px;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 12px;
+}
+
+/* ---------- 버튼 ---------- */
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.primary-button {
+  padding: 7px 22px;
+  border: 1px solid var(--fg);
+  border-radius: 2px;
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.primary-button:hover {
+  opacity: 0.88;
+}
+
+.primary-button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.text-button {
+  padding: 3px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  background: transparent;
+  font-size: 12px;
+}
+
+.text-button:hover {
+  border-color: var(--fg);
+}
+
+.text-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---------- 상단 바 ---------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand .eyebrow {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.readouts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 28px;
+  margin: 0;
+}
+
+.readouts div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.readouts dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.readouts dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.topbar-tools {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+}
+
+.conn {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.conn.live::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--fg);
+  vertical-align: 1px;
+}
+
+.conn.lost {
+  color: var(--accent);
+}
+
+/* ---------- 전체 배치 ---------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  min-height: calc(100vh - 62px);
+}
+
+.pane {
+  padding: 20px 24px;
+}
+
+.pane-video {
+  border-right: 1px solid var(--line);
+}
+
+.pane-side {
+  display: grid;
+  grid-template-rows: auto minmax(260px, 1fr);
+  padding: 0;
+}
+
+.pane-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* ---------- 왼쪽: 영상과 촬영 ---------- */
+
+.video {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--console-bg);
+  border: 1px solid var(--line);
+}
+
+.video img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.video-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 16px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.capture-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.status {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.history {
+  padding-top: 16px;
+}
+
+.thumbs {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thumbs a {
+  display: block;
+  border: 1px solid var(--line);
+}
+
+.thumbs a:hover {
+  border-color: var(--fg);
+}
+
+.thumbs img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+/* ---------- 오른쪽 위: 플로우차트 ---------- */
+
+.flow {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.composition {
+  margin-bottom: 14px;
+}
+
+.composition-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+#total-ms {
+  font-family: var(--mono);
+}
+
+.stack {
+  display: flex;
+  height: 8px;
+  background: var(--line);
+}
+
+.stack span {
+  height: 100%;
+  transition: width 0.2s linear;
+}
+
+.stack span:nth-child(odd) {
+  background: var(--stack-1);
+}
+
+.stack span:nth-child(even) {
+  background: var(--stack-2);
+}
+
+.stack span.is-bottleneck {
+  background: var(--accent);
+}
+
+.stack-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.stack-legend .is-bottleneck {
+  color: var(--accent);
+}
+
+.flow-body {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 20px;
+}
+
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* SVG 노드: 상태는 클래스로만 바꾸고, 색은 CSS 변수에서 가져온다. */
+.node {
+  cursor: pointer;
+}
+
+.node rect.box {
+  fill: var(--node-bg);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  transition: stroke 0.15s, stroke-width 0.15s, opacity 0.2s;
+}
+
+.node:hover rect.box {
+  stroke: var(--fg);
+}
+
+.node:focus {
+  outline: none;
+}
+
+.node:focus-visible rect.box,
+.node.is-selected rect.box {
+  stroke: var(--fg);
+  stroke-dasharray: 3 2;
+}
+
+.node.is-active rect.box {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-dasharray: none;
+}
+
+.node.is-bottleneck rect.box {
+  fill: var(--accent-weak);
+}
+
+.node.is-skipped {
+  opacity: 0.32;
+}
+
+.node .name {
+  fill: var(--fg);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.node .label {
+  fill: var(--muted);
+  font-size: 12px;
+}
+
+.node .badge {
+  fill: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  visibility: hidden;
+}
+
+.node.is-bottleneck .badge {
+  visibility: visible;
+}
+
+.edge {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  fill: none;
+}
+
+.arrowhead {
+  fill: var(--line-strong);
+}
+
+.ms {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.ms.is-bottleneck {
+  fill: var(--accent);
+}
+
+.group-box {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.group-label {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+/* 상세 패널 */
+.detail {
+  padding-left: 20px;
+  border-left: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.detail h3 {
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.detail .fn {
+  margin: 2px 0 12px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.detail dl {
+  margin: 0;
+}
+
+.detail dt {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.detail dd {
+  margin: 2px 0 0;
+}
+
+.detail .params {
+  margin: 4px 0 0;
+  padding-left: 16px;
+}
+
+.detail .params code {
+  color: var(--fg);
+}
+
+.detail .warning {
+  color: var(--accent);
+}
+
+/* ---------- 오른쪽 아래: 로그 콘솔 ---------- */
+
+.log {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 14px 24px 20px;
+}
+
+.log-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.log-toolbar h2 {
+  margin-right: 6px;
+}
+
+.log-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.log-toolbar #log-count {
+  margin-left: auto;
+}
+
+.console {
+  flex: 1;
+  min-height: 220px;
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: 8px 10px;
+  background: var(--console-bg);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.console .line {
+  display: block;
+}
+
+.console .INFO {
+  color: var(--fg);
+}
+
+.console .DEBUG {
+  color: var(--faint);
+}
+
+.console .WARN {
+  color: var(--accent);
+}
+
+.console .notice {
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* 레벨 필터: 콘솔에 hide-레벨 클래스를 붙이면 그 레벨 줄을 숨긴다. */
+.console.hide-INFO .INFO,
+.console.hide-DEBUG .DEBUG,
+.console.hide-WARN .WARN {
+  display: none;
+}
+
+/* ---------- 좁은 화면 ---------- */
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pane-video {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+    gap: 12px 24px;
+  }
+}
+
+@media (max-width: 560px) {
+  .pane,
+  .flow,
+  .log {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .topbar {
+    padding: 12px 16px;
+  }
+
+  .flow-body {
+    grid-template-columns: 1fr;
+  }
+
+  .detail {
+    padding-left: 0;
+    padding-top: 12px;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .thumbs {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>웹캠 켜기·끄기</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <style>
+    .switch-page {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 64px 16px;
+    }
+
+    .switch-state {
+      margin: 18px 0 6px;
+      font-family: var(--mono);
+      font-size: 28px;
+    }
+
+    .switch-state.off {
+      color: var(--muted);
+    }
+
+    .switch-actions {
+      display: flex;
+      gap: 10px;
+      margin: 22px 0 14px;
+    }
+
+    .switch-actions form {
+      margin: 0;
+    }
+
+    .switch-actions button {
+      min-width: 120px;
+    }
+
+    .switch-actions button:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .switch-links {
+      margin-top: 28px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .switch-links a {
+      color: var(--fg);
+    }
+  </style>
+</head>
+<body>
+  <main class="switch-page">
+    <span class="muted small">STEP 8 · 웹캠</span>
+    <h1>웹캠 켜기·끄기</h1>
+
+    {% if is_on %}
+      <p class="switch-state">켜짐</p>
+      <p class="muted small">카메라를 쓰는 중입니다. 끄면 장치가 해제되어 웹캠 표시등도 꺼집니다.</p>
+    {% else %}
+      <p class="switch-state off">꺼짐</p>
+      <p class="muted small">카메라가 해제되어 있습니다. 모델은 그대로 준비되어 있어 켜면 바로 이어집니다.</p>
+    {% endif %}
+
+    <div class="switch-actions">
+      <form method="post" action="{{ url_for('camera_switch', action='on') }}">
+        <button type="submit" class="primary-button" {% if is_on %}disabled{% endif %}>켜기</button>
+      </form>
+      <form method="post" action="{{ url_for('camera_switch', action='off') }}">
+        <button type="submit" class="text-button" style="padding:7px 22px" {% if not is_on %}disabled{% endif %}>끄기</button>
+      </form>
+    </div>
+
+    {% if message %}
+      <p class="status" role="status">{{ message }}</p>
+    {% endif %}
+
+    <p class="switch-links"><a href="{{ url_for('index') }}">대시보드로 가기</a></p>
+  </main>
+</body>
+</html>

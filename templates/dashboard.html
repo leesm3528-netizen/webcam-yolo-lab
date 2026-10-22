@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>파이프라인 대시보드</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+  <!-- 상단 바: 지금 실행 설정과 FPS -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="eyebrow">STEP 8</span>
+      <h1>파이프라인 대시보드</h1>
+    </div>
+
+    <dl class="readouts">
+      <div><dt>FPS</dt><dd id="fps">-</dd></div>
+      <div><dt>장치</dt><dd id="device">-</dd></div>
+      <div><dt>imgsz</dt><dd id="imgsz">-</dd></div>
+      <div><dt>conf</dt><dd id="conf">-</dd></div>
+      <div><dt>skip</dt><dd id="skip">-</dd></div>
+      <div><dt>frame</dt><dd id="frame">-</dd></div>
+    </dl>
+
+    <div class="topbar-tools">
+      <span class="conn" id="conn">연결 중</span>
+      <button type="button" class="text-button" id="camera-toggle" aria-pressed="false">카메라 끄기</button>
+      <button type="button" class="text-button" id="theme-toggle">테마</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- 왼쪽: 탐지 결과 영상과 촬영 (STEP 3 기능 유지) -->
+    <section class="pane pane-video" aria-labelledby="video-title">
+      <div class="pane-head">
+        <h2 id="video-title">탐지 결과</h2>
+        <code>/detect_feed</code>
+      </div>
+
+      <div class="video">
+        <img id="stream" src="/detect_feed" alt="YOLO 탐지 결과 실시간 영상">
+        <p class="video-error" id="stream-error" hidden>영상을 받지 못했습니다. 서버 콘솔을 확인한 뒤 새로 고치세요.</p>
+      </div>
+
+      <div class="capture-bar">
+        <button type="button" class="primary-button" id="capture-button">촬영</button>
+        <span class="status" id="capture-status" role="status">스페이스 키로도 촬영합니다. 저장 위치: captures/detected</span>
+      </div>
+
+      <div class="history">
+        <div class="pane-head">
+          <h3>저장 이력</h3>
+          <span class="muted">최근 {{ history_limit }}장</span>
+        </div>
+        <p class="muted small" id="history-empty">저장된 프레임이 없습니다.</p>
+        <ul class="thumbs" id="thumbs"></ul>
+      </div>
+    </section>
+
+    <!-- 오른쪽: 플로우차트(위) + 로그 콘솔(아래) -->
+    <section class="pane pane-side">
+      <div class="flow" aria-labelledby="flow-title">
+        <div class="pane-head">
+          <h2 id="flow-title">파이프라인</h2>
+          <span class="muted small" id="active-text">대기 중</span>
+        </div>
+
+        <div class="composition" aria-label="한 프레임 시간 구성">
+          <div class="composition-head">
+            <span>한 프레임 시간 구성</span>
+            <span id="total-ms">-</span>
+          </div>
+          <div class="stack" id="stack"></div>
+          <div class="stack-legend" id="stack-legend"></div>
+        </div>
+
+        <div class="flow-body">
+          <div class="chart" id="chart" aria-label="파이프라인 플로우차트"></div>
+
+          <aside class="detail" id="detail" aria-live="polite">
+            <p class="muted small">노드를 클릭하면 그 단계 함수의 설명(docstring)이 여기에 나옵니다.</p>
+          </aside>
+        </div>
+      </div>
+
+      <div class="log" aria-labelledby="log-title">
+        <div class="log-toolbar">
+          <h2 id="log-title">로그</h2>
+          <button type="button" class="text-button" id="pause-button" aria-pressed="false">일시정지</button>
+          <label><input type="checkbox" data-level="INFO" checked> INFO</label>
+          <label><input type="checkbox" data-level="DEBUG"> DEBUG</label>
+          <label><input type="checkbox" data-level="WARN" checked> WARN</label>
+          <span class="muted small" id="log-count">0줄</span>
+        </div>
+        <div class="console hide-DEBUG" id="console" role="log" aria-live="off"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const HISTORY_LIMIT = {{ history_limit }};
+  </script>
+  <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>
